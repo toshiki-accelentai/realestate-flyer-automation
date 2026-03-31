@@ -17,13 +17,28 @@ TEMPLATE_ROW = 2  # テンプレートタブが参照している data_entry の
 
 
 def _get_client() -> gspread.Client:
-    """Google Sheets クライアントを取得する"""
-    service_account_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "service_account.json")
+    """Google Sheets クライアントを取得する。
+    Streamlit Cloud: st.secrets["gcp_service_account"] から認証
+    ローカル: service_account.json ファイルから認証
+    """
+    # Streamlit Cloud の Secrets から読み込む（優先）
+    try:
+        import streamlit as st
+        if "gcp_service_account" in st.secrets:
+            creds = Credentials.from_service_account_info(
+                dict(st.secrets["gcp_service_account"]), scopes=SCOPES
+            )
+            return gspread.authorize(creds)
+    except Exception:
+        pass
 
+    # ローカル: ファイルから読み込む
+    service_account_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "service_account.json")
     if not os.path.exists(service_account_path):
         raise FileNotFoundError(
-            f"サービスアカウントファイルが見つかりません: {service_account_path}\n"
-            ".env の GOOGLE_SERVICE_ACCOUNT_JSON を確認してください。"
+            "サービスアカウント認証情報が見つかりません。\n"
+            "ローカル: service_account.json を配置してください。\n"
+            "Streamlit Cloud: Secrets に [gcp_service_account] セクションを追加してください。"
         )
 
     creds = Credentials.from_service_account_file(service_account_path, scopes=SCOPES)
