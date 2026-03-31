@@ -236,6 +236,7 @@ def enrich_with_maps(data: dict, address: str) -> tuple[dict, list[str]]:
     errors = []
     client = _get_client()
     if not client:
+        errors.append("GOOGLE_MAPS_API_KEY が未設定のため、Maps情報を取得できませんでした。")
         return data, errors
 
     enriched = dict(data)
@@ -268,6 +269,8 @@ def enrich_with_maps(data: dict, address: str) -> tuple[dict, list[str]]:
         elementary = get_nearest_school(address, "小学校")
         if elementary:
             enriched["elementary_school"] = elementary
+        else:
+            errors.append("小学校が見つかりませんでした（半径3km以内）")
     except RuntimeError as e:
         errors.append(str(e))
 
@@ -276,21 +279,25 @@ def enrich_with_maps(data: dict, address: str) -> tuple[dict, list[str]]:
         middle = get_nearest_school(address, "中学校")
         if middle:
             enriched["middle_school"] = middle
+        else:
+            errors.append("中学校が見つかりませんでした（半径3km以内）")
     except RuntimeError as e:
         errors.append(str(e))
 
     # 周辺施設（スーパー・コンビニ・病院・銀行）
     facilities = [
         ("supermarket",  "supermarket",      "スーパー"),
-        ("convenience",  "convenience_store","コンビニ"),
+        ("convenience",  "convenience_store", "コンビニ"),
         ("hospital",     "hospital",         "病院"),
-        ("bank",              "bank",            "銀行"),
+        ("bank",         "bank",             "銀行"),
     ]
     for field_key, place_type, label in facilities:
         try:
             result = get_nearest_facility(address, place_type, label)
             if result:
                 enriched[field_key] = result
+            else:
+                errors.append(f"{label}が見つかりませんでした（半径3km以内）")
         except RuntimeError as e:
             errors.append(str(e))
 
