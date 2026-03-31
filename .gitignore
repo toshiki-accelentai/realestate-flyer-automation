@@ -8,3 +8,5 @@ venv/
 .DS_Store
 document/
 .claude/
+streamlit_secrets.toml
+scripts/

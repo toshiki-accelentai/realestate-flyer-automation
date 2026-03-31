@@ -24,13 +24,13 @@ def _get_client() -> gspread.Client:
     # Streamlit Cloud の Secrets から読み込む（優先）
     try:
         import streamlit as st
-        if "gcp_service_account" in st.secrets:
-            creds = Credentials.from_service_account_info(
-                dict(st.secrets["gcp_service_account"]), scopes=SCOPES
-            )
+        if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
+            sa_info = dict(st.secrets["gcp_service_account"])
+            creds = Credentials.from_service_account_info(sa_info, scopes=SCOPES)
             return gspread.authorize(creds)
-    except Exception:
-        pass
+    except Exception as e:
+        import streamlit as st
+        st.warning(f"Secrets からの認証に失敗しました: {e}")
 
     # ローカル: ファイルから読み込む
     service_account_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "service_account.json")
