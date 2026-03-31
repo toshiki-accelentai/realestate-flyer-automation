@@ -23,7 +23,15 @@ def _get_client() -> gspread.Client:
     """
     # Streamlit Cloud の Secrets から読み込む（優先）
     try:
+        import json as _json
         import streamlit as st
+        # 方法1: GOOGLE_SERVICE_ACCOUNT_JSON 環境変数（JSON文字列）
+        sa_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON_CONTENT")
+        if sa_json:
+            sa_info = _json.loads(sa_json)
+            creds = Credentials.from_service_account_info(sa_info, scopes=SCOPES)
+            return gspread.authorize(creds)
+        # 方法2: st.secrets の gcp_service_account セクション
         if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
             sa_info = dict(st.secrets["gcp_service_account"])
             creds = Credentials.from_service_account_info(sa_info, scopes=SCOPES)
